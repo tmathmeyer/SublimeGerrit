@@ -1,0 +1,18 @@
+{
+  // Settings:
+  // The default chromium directory
+  "chromium_checkout": "/chromium/src",
+
+  // Shows comments marked as "Done" even after you click the button.
+  "show_pending_comments": true,
+
+  // Shows comments which are uploaded and already marked as complete
+  "show_completed_comments": true,
+
+
+  // State Storage:
+  // Don't set anything here. This is used to store pending comments.
+  // You can clear junk from here in
+  // ~/.config/sublime-text/Packages/User/Chromium.sublime-settings
+  "pending_responses": {}
+}

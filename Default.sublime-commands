@@ -1,0 +1,14 @@
+[
+  {
+    "caption": "Chromium: Open all changed files",
+    "command": "cr_open_changed_files",
+  },
+  {
+    "caption": "Chromium: Show branch status",
+    "command": "cr_show_branch_status",
+  },
+  {
+    "caption": "Chromium: Upload new patch with comments",
+    "command": "cr_upload_patch_with_comments",
+  },
+]
