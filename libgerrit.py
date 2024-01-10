@@ -12,6 +12,8 @@ CURRENT_BRANCH = 'git symbolic-ref -q HEAD'
 DEFAULT_BRANCH = 'git symbolic-ref refs/remotes/origin/HEAD'
 GET_PROPERTY = 'git config --get branch.{}.{}'
 GET_PARENT = 'git rev-parse --abbrev-ref {}@{{u}}'
+DIFF_FILES = 'git diff --name-only {} {}'
+AHEAD_BEHIND = 'git rev-list --left-right {}...{} --count'
 
 
 CRREV_DETAIL_URI = '{server}/changes/{issue}'
@@ -39,15 +41,19 @@ class Branch(typing.NamedTuple):
     if not hasattr(cls, '__cache'):
       setattr(cls, '__cache', {})
     cache = getattr(cls, '__cache')
-    if branchname not in cache:
-      cache[branchname] = cls(branchname, directory)
-    return cache[branchname]
+    cachekey = f'{cls.__name__}.{branchname}'
+    if cachekey not in cache:
+      cache[cachekey] = cls(branchname, directory)
+    return cache[cachekey]
 
   @classmethod
   def GetAllNamedLocalBranches(cls, directory:str):
     branches = librun.OutputOrError(ALL_BRANCHES, cwd=directory)
     for branch in branches.split('\n'):
-      yield cls.Get(branch)
+      try:
+        yield cls.Get(branch, directory)
+      except:
+        pass
 
   def __getattr__(self, attr:str) -> str:
     try:
@@ -63,13 +69,35 @@ class Branch(typing.NamedTuple):
 
   def Parent(self) -> 'Branch':
     try:
-      parent_name = OutputOrError(GET_PARENT.format(self.branchname),
-                                  cwd=self.git_dir)
+      parent_name = librun.OutputOrError(GET_PARENT.format(self.branchname),
+                                         cwd=self.git_dir)
       if parent_name == 'heads/origin/main':
         return None
-      return Branch.Get(parent_name)
+      return Branch.Get(parent_name, self.git_dir)
     except:
       return None
+
+  def AheadBehindBranch(self) -> (int, int):
+    #TODO: don't use 'main' by default!
+    parent_branch = self.Parent()
+    parent = parent_branch.branchname if parent_branch else 'main'
+    values = librun.OutputOrError(AHEAD_BEHIND.format(self.branchname, parent),
+                                  cwd=self.git_dir)
+    return (int(v) for v in values.split())
+
+  def ModifiedFilesOnBranch(self) -> [str]:
+    #TODO: don't use 'main' by default!
+    ahead, behind = self.AheadBehindBranch()
+    if behind != 0:
+      return ['BRANCH NOT REBASED']
+    parent = self.Parent()
+    parent_name = parent.branchname if parent else 'main'
+    return librun.OutputOrError(DIFF_FILES.format(self.branchname, parent_name),
+                                cwd=self.git_dir).split('\n')
+
+  def IsCurrent(self):
+    cb = librun.OutputOrError('git branch --show-current', cwd=self.git_dir)
+    return cb == self.branchname
 
 
 class Comment(typing.NamedTuple):
@@ -119,6 +147,11 @@ class Gerrit(Branch):
     query = self._query()
     current_revision = query['revisions'][query['current_revision']]
     return list(current_revision['files'].keys())
+
+  def PatchSetTitle(self):
+    return self.branchname
+    #query = self._query()
+    #return query.get('subject', self.branchname)
 
   def GetCommentsForFileInChange(self, filename:str) -> [CommentChain]:
     if filename.startswith(self.git_dir):
