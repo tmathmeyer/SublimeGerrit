@@ -3,7 +3,7 @@ import json
 import typing
 import sublime
 
-from . import libgerrit
+from . import libgit
 from . import libmodify
 
 CLOSE_BRANCH_STATUS_TAB = 'cr_close_active_branch_status'
@@ -79,7 +79,7 @@ def _RenderHtmlStream(trees, **kwargs):
 
 class PatchSetTree(typing.NamedTuple):
   dependent_patches: typing.List['PatchSetTree']
-  branch: libgerrit.Gerrit
+  branch: libgit.Gerrit
 
   @classmethod
   def Local(cls, branch:str, files:[str]):
@@ -161,9 +161,9 @@ def GetAllPatchSets(gitdir:str) -> typing.List[PatchSetTree]:
   root_trees:typing.List[PatchSetTree] = []
 
   tree_patches:typing.Dict[str, PatchSetTree] = {}
-  gerrit_branches:typing.Dict[str, libgerrit.Gerrit] = {}
+  gerrit_branches:typing.Dict[str, libgit.Gerrit] = {}
 
-  for branch in libgerrit.Gerrit.GetAllNamedLocalBranches(gitdir):
+  for branch in libgit.Gerrit.GetAllNamedLocalBranches(gitdir):
     if branch.branchname != 'main':
       gerrit_branches[branch.branchname] = branch
       tree_patches[branch.branchname] = PatchSetTree([], branch)
@@ -226,9 +226,9 @@ def RenderAllPatches(gitdir:str) -> str:
   root_trees:typing.List[PatchSetTree] = []
 
   tree_patches:typing.Dict[str, PatchSetTree] = {}
-  gerrit_branches:typing.Dict[str, libgerrit.Gerrit] = {}
+  gerrit_branches:typing.Dict[str, libgit.Gerrit] = {}
 
-  for branch in libgerrit.Gerrit.GetAllNamedLocalBranches(gitdir):
+  for branch in libgit.Gerrit.GetAllNamedLocalBranches(gitdir):
     if branch.branchname != 'main':
       gerrit_branches[branch.branchname] = branch
       tree_patches[branch.branchname] = PatchSetTree([], branch)

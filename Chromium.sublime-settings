@@ -4,10 +4,10 @@
   "chromium_checkout": "/chromium/src",
 
   // Shows comments marked as "Done" even after you click the button.
-  "show_pending_comments": true,
+  "show_pending_comments": false,
 
   // Shows comments which are uploaded and already marked as complete
-  "show_completed_comments": true,
+  "show_completed_comments": false,
 
 
   // State Storage:

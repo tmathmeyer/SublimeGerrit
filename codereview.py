@@ -3,18 +3,18 @@ import sublime_plugin
 import sublime
 import typing
 
-from . import libgerrit
+from . import libgit
 
 
 class ControlsContext(typing.NamedTuple):
-  chain: libgerrit.CommentChain
+  chain: libgit.CommentChain
   view:sublime.View
   region: sublime.Region
   change_id: str
   width: int
   color: str
   controls: typing.List[str]
-  additional: libgerrit.Comment
+  additional: libgit.Comment
 
   def ToCommentContext(self):
     return CommentContext(None, self.region, self.width, self.color)
@@ -26,12 +26,12 @@ class ControlsContext(typing.NamedTuple):
 
 
 class CommentContext(typing.NamedTuple):
-  comment: libgerrit.Comment
+  comment: libgit.Comment
   region: sublime.Region
   width: int
   color: str
 
-  def Clone(self, new_comment:libgerrit.Comment):
+  def Clone(self, new_comment:libgit.Comment):
     return CommentContext(new_comment, self.region, self.width, self.color)
 
   def ToPhantom(self) -> sublime.Phantom:
@@ -160,7 +160,7 @@ def _CollectPhantoms(controls:ControlsContext, phantoms:sublime.PhantomSet):
   yield controls.ToPhantom(phantoms)
 
 
-def _BuildControlsContext(chain:libgerrit.CommentChain,
+def _BuildControlsContext(chain:libgit.CommentChain,
                           view:sublime.View,
                           change_id:str,
                           pending=None):
@@ -173,7 +173,7 @@ def _BuildControlsContext(chain:libgerrit.CommentChain,
     chain, view, region, change_id, width, color, controls, additional)
 
 
-def _BuildControlsDetail(chain:libgerrit.CommentChain, pending):
+def _BuildControlsDetail(chain:libgit.CommentChain, pending):
   controls = []
   color = '#fef7e0' # Same yellow color as gerrit lol
   additional = None
@@ -181,7 +181,7 @@ def _BuildControlsDetail(chain:libgerrit.CommentChain, pending):
     controls.append('Discard')
     controls.append('Edit')
     reply, finished = (pending[k] for k in ('reply', 'finished'))
-    additional = libgerrit.Comment.MakePendingResponse(reply)
+    additional = libgit.Comment.MakePendingResponse(reply)
     if finished:
       controls.append('Incomplete')
       color = '#e8eaed'
@@ -193,13 +193,13 @@ def _BuildControlsDetail(chain:libgerrit.CommentChain, pending):
   return controls, color, additional
 
 
-def _ApplyCommentChain(chain:libgerrit.CommentChain, view:sublime.View, change_id:str, pending=None):
+def _ApplyCommentChain(chain:libgit.CommentChain, view:sublime.View, change_id:str, pending=None):
   phantom_set = sublime.PhantomSet(view, f'{chain.initial_message_id}')
   controls_context = _BuildControlsContext(chain, view, change_id, pending)
   phantom_set.update(_CollectPhantoms(controls_context, phantom_set))
 
 
-def GetPendingChange(chain:libgerrit.CommentChain, pending:dict, change_id:str):
+def GetPendingChange(chain:libgit.CommentChain, pending:dict, change_id:str):
   if change_id not in pending:
     return None
   if chain.initial_message_id not in pending[change_id]:
@@ -207,6 +207,7 @@ def GetPendingChange(chain:libgerrit.CommentChain, pending:dict, change_id:str):
   return pending[change_id][chain.initial_message_id]
 
 
+'''
 class ChangelistFileOpenListener(sublime_plugin.EventListener):
   def on_load_async(self, view:sublime.View):
     settings = sublime.load_settings('Chromium.sublime-settings')
@@ -214,7 +215,7 @@ class ChangelistFileOpenListener(sublime_plugin.EventListener):
     show_complete = settings['show_completed_comments']
     show_pending = settings['show_pending_comments']
     pending_responses = settings['pending_responses']
-    current_branch = libgerrit.Gerrit.Current(checkout)
+    current_branch = libgit.Gerrit.Current(checkout)
     for chain in current_branch.GetCommentsForFileInChange(view.file_name()):
       pending = GetPendingChange(chain, pending_responses, current_branch._issue)
       if pending is not None:
@@ -224,3 +225,4 @@ class ChangelistFileOpenListener(sublime_plugin.EventListener):
         _ApplyCommentChain(chain, view, current_branch._issue)
       elif pending.IsUnresolved():
         _ApplyCommentChain(chain, view, current_branch._issue)
+'''

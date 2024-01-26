@@ -3,9 +3,10 @@ import os
 import sublime_plugin
 import sublime
 
-from . import libgerrit
+from . import libgit
 from . import libtree
 from . import libmodify
+from . import libcodereview
 
 
 class NestableCommand(sublime_plugin.WindowCommand):
@@ -26,7 +27,7 @@ class CrOpenChangedFiles(NestableCommand):
   def _run(self, **kwargs) -> bool:
     settings = sublime.load_settings("Chromium.sublime-settings")
     checkout = settings['chromium_checkout']
-    current_branch = libgerrit.Gerrit.Current(checkout)
+    current_branch = libgit.Gerrit.Current(checkout)
     for file in current_branch.FileChangeList():
       self.window.open_file(fname=os.path.join(checkout, file))
     return True
@@ -71,4 +72,7 @@ class CrNopTrampoline(NestableCommand):
     return True
 
 
-
+class ChangelistFileOpenListener(sublime_plugin.EventListener):
+  def on_load_async(self, view:sublime.View):
+    contexts = libcodereview.CreateCommentChainContextsForView(view)
+    libcodereview.RenderContexts(view, contexts)
